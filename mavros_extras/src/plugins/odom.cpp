@@ -48,7 +48,8 @@ public:
 	OdometryPlugin() : PluginBase(),
 		odom_nh("~odometry"),
 		fcu_odom_parent_id_des("map"),
-		fcu_odom_child_id_des("base_link")
+		fcu_odom_child_id_des("base_link"),
+		tf_prefix("")
 	{ }
 
 	void initialize(UAS &uas_) override
@@ -56,8 +57,12 @@ public:
 		PluginBase::initialize(uas_);
 
 		// frame params:
+		std::string tfPrefixKey;  // key on the parameter server for droneName
+		odom_nh.searchParam("tf_prefix",tfPrefixKey); // search for "droneName"
+		odom_nh.param<std::string>(tfPrefixKey, tf_prefix, ""); // load "tf_prefix", if exists
 		odom_nh.param<std::string>("fcu/odom_parent_id_des", fcu_odom_parent_id_des, "map");
 		odom_nh.param<std::string>("fcu/odom_child_id_des", fcu_odom_child_id_des, "base_link");
+		fcu_odom_child_id_des = tf_prefix+fcu_odom_child_id_des; // update "fcu_odom_child_id_des"
 
 		// publishers
 		odom_pub = odom_nh.advertise<nav_msgs::Odometry>("in", 10);
@@ -78,6 +83,7 @@ private:
 	ros::Publisher odom_pub;			//!< nav_msgs/Odometry publisher
 	ros::Subscriber odom_sub;			//!< nav_msgs/Odometry subscriber
 
+	std::string tf_prefix;						//!< tf prefix
 	std::string fcu_odom_parent_id_des;			//!< desired orientation of the fcu odometry message's parent frame
 	std::string fcu_odom_child_id_des;			//!< desired orientation of the fcu odometry message's child frame
 
@@ -123,7 +129,7 @@ private:
 		Eigen::Affine3d tf_child2child_des;
 
 		lookup_static_transform(fcu_odom_parent_id_des, "map_ned", tf_parent2parent_des);
-		lookup_static_transform( fcu_odom_child_id_des, "base_link_frd", tf_child2child_des);
+		lookup_static_transform( fcu_odom_child_id_des, tf_prefix+"base_link_frd", tf_child2child_des);
 
 		//! Build 6x6 pose covariance matrix to be transformed and sent
 		Matrix6d cov_pose = Matrix6d::Zero();
@@ -204,7 +210,7 @@ private:
 		Eigen::Affine3d tf_child2child_des;
 
 		lookup_static_transform("odom_ned", odom->header.frame_id, tf_parent2parent_des);
-		lookup_static_transform("base_link_frd", odom->child_frame_id, tf_child2child_des);
+		lookup_static_transform(tf_prefix+"base_link_frd", odom->child_frame_id, tf_child2child_des);
 
 		//! Build 6x6 pose covariance matrix to be transformed and sent
 		ftf::Covariance6d cov_pose = odom->pose.covariance;

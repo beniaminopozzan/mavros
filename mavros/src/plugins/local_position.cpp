@@ -56,6 +56,10 @@ public:
 		lp_nh.param("tf/send", tf_send, false);
 		lp_nh.param<std::string>("tf/frame_id", tf_frame_id, "map");
 		lp_nh.param<std::string>("tf/child_frame_id", tf_child_frame_id, "base_link");
+		std::string tfPrefixKey;  // key on the parameter server for droneName
+		lp_nh.searchParam("tf_prefix",tfPrefixKey); // search for "droneName"
+		lp_nh.param<std::string>(tfPrefixKey, tf_prefix, ""); // load "tf_prefix", if exists
+		tf_child_frame_id = tf_prefix + tf_child_frame_id;
 
 		local_position = lp_nh.advertise<geometry_msgs::PoseStamped>("pose", 10);
 		local_position_cov = lp_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose_cov", 10);
@@ -87,6 +91,7 @@ private:
 	std::string frame_id;		//!< frame for Pose
 	std::string tf_frame_id;	//!< origin for TF
 	std::string tf_child_frame_id;	//!< frame for TF
+	std::string tf_prefix; //!< tf prefix
 	bool tf_send;
 	bool has_local_position_ned;
 	bool has_local_position_ned_cov;

@@ -69,6 +69,10 @@ public:
 		gp_nh.param<std::string>("tf/frame_id", tf_frame_id, "map");
 		gp_nh.param<std::string>("tf/global_frame_id", tf_global_frame_id, "earth");	// The global_origin should be represented as "earth" coordinate frame (ECEF) (REP 105)
 		gp_nh.param<std::string>("tf/child_frame_id", tf_child_frame_id, "base_link");
+		std::string tfPrefixKey;  // key on the parameter server for droneName
+		gp_nh.searchParam("tf_prefix",tfPrefixKey); // search for "droneName"
+		gp_nh.param<std::string>(tfPrefixKey, tf_prefix, ""); // load "tf_prefix", if exists
+		tf_child_frame_id = tf_prefix + tf_child_frame_id;
 
 		UAS_DIAG(m_uas).add("GPS", this, &GlobalPositionPlugin::gps_diag_run);
 
@@ -127,6 +131,7 @@ private:
 	std::string tf_frame_id;	//!< origin for TF
 	std::string tf_global_frame_id;	//!< global origin for TF
 	std::string tf_child_frame_id;	//!< frame for TF and Pose
+	std::string tf_prefix; //!< tf prefix
 
 	bool tf_send;
 	bool use_relative_alt;

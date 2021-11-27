@@ -51,11 +51,25 @@ UAS::UAS() :
 		ros::shutdown();
 	}
 
+	ros::NodeHandle nh("~");
+	std::string tfPrefixKey;  // key on the parameter server for droneName
+	std::string tf_prefix("");
+	if(nh.searchParam("tf_prefix", tfPrefixKey)) // search for "tf_prefix"
+	{
+		nh.param<std::string>(tfPrefixKey, tf_prefix, ""); // load "tf_prefix", if exists
+		ROS_INFO_STREAM("tf_prefix = " << tf_prefix);
+	}
+	else
+		ROS_WARN("no tf_prefix found in the parameter server, using none");
+
 	// Publish helper TFs used for frame transformation in the odometry plugin
 	std::vector<geometry_msgs::TransformStamped> transform_vector;
-	add_static_transform("map", "map_ned", Eigen::Affine3d(ftf::quaternion_from_rpy(M_PI, 0, M_PI_2)),transform_vector);
-	add_static_transform("odom", "odom_ned", Eigen::Affine3d(ftf::quaternion_from_rpy(M_PI, 0, M_PI_2)),transform_vector);
-	add_static_transform("base_link", "base_link_frd", Eigen::Affine3d(ftf::quaternion_from_rpy(M_PI, 0, 0)),transform_vector);
+	/*
+		now these static transforms must be created externally, only ONCE
+	*/
+	//add_static_transform(tf_prefix+"map", tf_prefix+"map_ned", Eigen::Affine3d(ftf::quaternion_from_rpy(M_PI, 0, M_PI_2)),transform_vector);
+	//add_static_transform(tf_prefix+"odom", tf_prefix+"odom_ned", Eigen::Affine3d(ftf::quaternion_from_rpy(M_PI, 0, M_PI_2)),transform_vector);
+	add_static_transform(tf_prefix+"base_link", tf_prefix+"base_link_frd", Eigen::Affine3d(ftf::quaternion_from_rpy(M_PI, 0, 0)),transform_vector);
 
 	tf2_static_broadcaster.sendTransform(transform_vector);
 }
